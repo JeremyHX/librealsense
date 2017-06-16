@@ -1,13 +1,5 @@
 # Intel® RealSense™ Cross Platform API
 
-[ ![License] [license-image] ] [license]
-
-[release-image]: http://img.shields.io/badge/release-1.9.7-blue.svg?style=flat
-[releases]: https://github.com/IntelRealSense/librealsense/releases
-
-[license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
-[license]: LICENSE
-
 Platform | Build Status |
 -------- | ------------ |
 Linux and OS X | [![Build Status](https://travis-ci.org/IntelRealSense/librealsense.svg?branch=master)](https://travis-ci.org/IntelRealSense/librealsense) |
@@ -20,7 +12,11 @@ Developer kits containing the necessary hardware to use this library are availab
 The Intel® RealSense™ Cross Platform API is experimental and not an official Intel product. It is subject to incompatible API changes in future updates.
 
 ## Table of Contents
-* [Installation Guide](#installation-guide)
+* Installation Guides:
+  * [Linux](./doc/installation.md)
+  * [Windows](./doc/installation_windows.md)
+  * [Mac OS X](./doc/installation_osx.md)
+* [Useful Links](#useful-links)
 * [Documentation](#documentation)
 * [Functionality](#functionality)
 * [Compatible Devices](#compatible-devices)
@@ -28,11 +24,12 @@ The Intel® RealSense™ Cross Platform API is experimental and not an official 
 * [Integrations](#integrations)
 * [License](#license)
 
-## Installation Guide
-
-  * [Linux](./doc/installation.md)
-  * [Windows](./doc/installation_windows.md)
-  * [Mac OS X](./doc/installation_osx.md)
+## Useful Links
+* [Intel RealSense Community](https://communities.intel.com/community/tech/realsense) - Official support, Q&A and other useful content
+* [Support Site](http://www.intel.com/content/www/us/en/support/emerging-technologies/intel-realsense-technology.html) - Contains content and web ticket capability for 1:1 interaction
+* [SDK Design Guidelines](http://www.mouser.com/pdfdocs/intel-realsense-sdk-design-r200.pdf) - Guidelines and tips for designing applications using RealSense cameras
+* [R200 Datasheet](http://www.mouser.com/pdfdocs/intel_realsense_camera_r200.pdf) - In-depth information about the R200 camera hardware.
+* [Intel RealSense Stereoscopic Depth Cameras](https://arxiv.org/abs/1705.05548) - A technical paper describing the R200, LR200, SR300 and RS400 in detail. Includes theoretical background, performance expectations, post-processing suggestions, etc.  
 
 ## Documentation
 
@@ -41,11 +38,12 @@ A comprehensive suite of sample and tutorial applications are provided in the `/
   * [C API](./include/librealsense/rs.h) - With doxygen-style API comments
   * To build documentation locally from sources, on Ubuntu run the following commands:
     * `sudo apt-get install doxygen`
-	* `doxygen doc/Doxygen_API/Doxyfile`
+    * `doxygen doc/Doxygen_API/Doxyfile`
   * [What's New?](./doc/whats_new.md)
   * [Projection APIs](./doc/projection.md) - A guide on coordinate systems, calibration information, and projection
   * [Camera Spec Sheet](./doc/camera_specs.md) - A brief overview of R200, F200 and SR300
   * [Developer Notes](./doc/dev_log.md) - Several informal notes gathered during internal releases
+  * [OpenCV Tutorial](./doc/stepbystep/getting_started_with_openCV.md) - Getting started with librealsense using OpenCV
   * [Stream Formats](./doc/supported_video_formats.pdf) - A list of available stream resolutions and pixel formats provided by the supported devices.
   * [Branching and Releases](./doc/branching.md) - Overview of live branches and major releases
 
@@ -60,21 +58,18 @@ A comprehensive suite of sample and tutorial applications are provided in the `/
 
 ## Compatible Devices
 
-1. RealSense R200 (Firmware 1.0.72.06 and up)
-2. RealSense F200 (Firmware 2.60.0.0 and up)
-3. RealSense SR300 (Firmware 3.10.10.0 and up)
-4. RealSense LR200 (Firmware 2.0.71.18 and up)
+1. RealSense R200
+2. RealSense F200
+3. RealSense SR300
+4. RealSense LR200
 5. [RealSense ZR300](https://newsroom.intel.com/chip-shots/intel-announces-tools-realsense-technology-development/)
-  * Camera Firmware 2.0.71.18 and up
-  * USB Adapter Board Firmware 1.27.0.0 and up
-  * Motion Module Firmware 1.23.0.0 and up
 
 ## Compatible Platforms
 
 The library is written in standards-conforming C++11 and relies only on the C89 ABI for its public interface. It is developed and tested on the following platforms:
 
 1. Ubuntu 14.04 and 16.04 LTS (GCC 4.9 toolchain)
-2. Windows 10 (Visual Studio 2015 Update 2)
+2. Windows 8.1 and Windows 10 (Visual Studio 2015 Update 2)
 3. Mac OS X 10.7+ (Clang toolchain)
 4. [Ostro](https://ostroproject.org/)
 
@@ -98,9 +93,17 @@ The library has been integrated with a number of third-party components and oper
   * [Yocto / WindRiver Linux](https://github.com/IntelRealSense/meta-intel-librealsense)
   * [Arch Linux](https://aur.archlinux.org/packages/librealsense/)
 
+## Community Contributions
+
 Additional language bindings (experimental, community maintained):
   * [Python](https://github.com/toinsson/pyrealsense)
   * [Java (generated by JavaCPP)](https://github.com/poqudrof/javacpp-presets/tree/realsense-pull)
+
+Excellent blog-series by [@teknotus](https://github.com/teknotus) covering the fundamentals of working with RealSense on Linux:
+  * [Intel RealSense camera on Linux](http://solsticlipse.com/2015/01/09/intel-real-sense-camera-on-linux.html)
+  * [3d Camera Controls](http://solsticlipse.com/2015/02/10/intel-real-sense-on-linux-part-2-3d-camera-controls.html)
+  * [Infrared, calibration, point clouds](http://solsticlipse.com/2015/03/31/intel-real-sense-3d-on-linux-macos.html)
+  * [The long road to ubiquitous 3d cameras](http://solsticlipse.com/2016/09/26/long-road-to-ubiquitous-3d-cameras.html)
 
 ## License
 

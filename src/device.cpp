@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
+#include <functional>
 
 using namespace rsimpl;
 using namespace rsimpl::motion_module;
@@ -18,11 +19,12 @@ using namespace rsimpl::motion_module;
 const int MAX_FRAME_QUEUE_SIZE = 30;
 const int MAX_EVENT_QUEUE_SIZE = 400;
 const int MAX_EVENT_TINE_OUT   = 30;
+const int NUMBER_OF_FRAMES_TO_SAMPLE = 5;
 
 rs_device_base::rs_device_base(std::shared_ptr<rsimpl::uvc::device> device, const rsimpl::static_device_info & info, calibration_validator validator) : device(device), config(info),
     depth(config, RS_STREAM_DEPTH, validator), color(config, RS_STREAM_COLOR, validator), infrared(config, RS_STREAM_INFRARED, validator), infrared2(config, RS_STREAM_INFRARED2, validator), fisheye(config, RS_STREAM_FISHEYE, validator),
     points(depth), rect_color(color), color_to_depth(color, depth), depth_to_color(depth, color), depth_to_rect_color(depth, rect_color), infrared2_to_depth(infrared2,depth), depth_to_infrared2(depth,infrared2),
-    capturing(false), data_acquisition_active(false), max_publish_list_size(MAX_FRAME_QUEUE_SIZE), event_queue_size(MAX_EVENT_QUEUE_SIZE), events_timeout(MAX_EVENT_TINE_OUT),
+    capturing(false), data_acquisition_active(false), max_publish_list_size(RS_USER_QUEUE_SIZE), event_queue_size(RS_MAX_EVENT_QUEUE_SIZE), events_timeout(RS_MAX_EVENT_TIME_OUT),
     usb_port_id(""), motion_module_ready(false), keep_fw_logger_alive(false), frames_drops_counter(0)
 {
     streams[RS_STREAM_DEPTH    ] = native_streams[RS_STREAM_DEPTH]     = &depth;
@@ -375,10 +377,13 @@ void rs_device_base::start_video_streaming(bool is_mipi)
             streams.push_back(output.first);
         }     
 
+        auto supported_metadata_vector = std::make_shared<std::vector<rs_frame_metadata>>(config.info.supported_metadata_vector);
+
+        auto actual_fps_calc = std::make_shared<fps_calc>(NUMBER_OF_FRAMES_TO_SAMPLE, mode_selection.get_framerate());
         std::shared_ptr<drops_status> frame_drops_status(new drops_status{});
         // Initialize the subdevice and set it to the selected mode
         set_subdevice_mode(*device, mode_selection.mode.subdevice, mode_selection.mode.native_dims.x, mode_selection.mode.native_dims.y, mode_selection.mode.pf.fourcc, mode_selection.mode.fps, 
-            [this, mode_selection, archive, timestamp_reader, streams, capture_start_time, frame_drops_status](const void * frame, std::function<void()> continuation) mutable
+            [this, mode_selection, archive, timestamp_reader, streams, capture_start_time, frame_drops_status, actual_fps_calc, supported_metadata_vector](const void * frame, std::function<void()> continuation) mutable
         {
             auto now = std::chrono::system_clock::now().time_since_epoch();
             auto sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
@@ -386,9 +391,11 @@ void rs_device_base::start_video_streaming(bool is_mipi)
             frame_continuation release_and_enqueue(continuation, frame);
             // Ignore any frames which appear corrupted or invalid
             if (!timestamp_reader->validate_frame(mode_selection.mode, frame)) return;
+            
+            auto actual_fps = actual_fps_calc->calc_fps(now);
 
             // Determine the timestamp for this frame
-            auto timestamp = timestamp_reader->get_frame_timestamp(mode_selection.mode, frame);
+            auto timestamp = timestamp_reader->get_frame_timestamp(mode_selection.mode, frame, actual_fps);
             auto frame_counter = timestamp_reader->get_frame_counter(mode_selection.mode, frame);
             auto recieved_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - capture_start_time).count();
             if(frame_counter == 0) {
@@ -448,8 +455,9 @@ void rs_device_base::start_video_streaming(bool is_mipi)
                     output.second,
                     output.first,
                     mode_selection.pad_crop,
-                    config.info.supported_metadata_vector,
-                    exposure_value[0]);
+                    supported_metadata_vector,
+                    exposure_value[0],
+                    actual_fps);
 
                 // Obtain buffers for unpacking the frame
                 dest.push_back(archive->alloc_frame(output.first, additional_data, requires_processing));
@@ -542,7 +550,7 @@ rs_frame_ref* ::rs_device_base::clone_frame(rs_frame_ref* frame)
 
 void rs_device_base::update_device_info(rsimpl::static_device_info& info)
 {
-    info.options.push_back({ RS_OPTION_FRAMES_QUEUE_SIZE,     1, MAX_FRAME_QUEUE_SIZE,      1, MAX_FRAME_QUEUE_SIZE });
+    info.options.push_back({ RS_OPTION_FRAMES_QUEUE_SIZE,     1, RS_USER_QUEUE_SIZE,      1, RS_USER_QUEUE_SIZE });
 }
 
 const char * rs_device_base::get_option_description(rs_option option) const
@@ -567,16 +575,16 @@ const char * rs_device_base::get_option_description(rs_option option) const
     case RS_OPTION_F200_FILTER_OPTION                              : return "Set the filter to apply to each depth frame. Each one of the filter is optimized per the application requirements";
     case RS_OPTION_F200_CONFIDENCE_THRESHOLD                       : return "The confidence level threshold used by the Depth algorithm pipe to set whether a pixel will get a valid range or will be marked with invalid range";
     case RS_OPTION_F200_DYNAMIC_FPS                                : return "(F200-only) Allows to reduce FPS without restarting streaming. Valid values are {2, 5, 15, 30, 60}";
-    case RS_OPTION_SR300_AUTO_RANGE_ENABLE_MOTION_VERSUS_RANGE     : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_ENABLE_LASER                   : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_MIN_MOTION_VERSUS_RANGE        : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_MAX_MOTION_VERSUS_RANGE        : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_START_MOTION_VERSUS_RANGE      : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_MIN_LASER                      : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_MAX_LASER                      : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_START_LASER                    : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_UPPER_THRESHOLD                : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
-    case RS_OPTION_SR300_AUTO_RANGE_LOWER_THRESHOLD                : return "Configures SR300 Depth Auto-Range setting. Should not be used directly but through set IVCAM preset method";
+    case RS_OPTION_SR300_AUTO_RANGE_ENABLE_MOTION_VERSUS_RANGE     : return "Configures SR300 Depth Auto-Range setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_ENABLE_LASER                   : return "Configures SR300 Depth Auto-Range Laser setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_MIN_MOTION_VERSUS_RANGE        : return "Configures SR300 Depth Auto-Range Min laser motion setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_MAX_MOTION_VERSUS_RANGE        : return "Configures SR300 Depth Auto-Range Max laser motion setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_START_MOTION_VERSUS_RANGE      : return "Configures SR300 Depth Auto-Range start laser motion setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_MIN_LASER                      : return "Configures SR300 Depth Auto-Range Min laser setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_MAX_LASER                      : return "Configures SR300 Depth Auto-Range Max laser setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_START_LASER                    : return "Configures SR300 Depth Auto-Range Start laser setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_UPPER_THRESHOLD                : return "Configures SR300 Depth Auto-Range upper threshold setting (Should be used through set IVCAM preset method)";
+    case RS_OPTION_SR300_AUTO_RANGE_LOWER_THRESHOLD                : return "Configures SR300 Depth Auto-Range lower threshold setting (Should be used through set IVCAM preset method)";
     case RS_OPTION_R200_LR_AUTO_EXPOSURE_ENABLED                   : return "Enables / disables R200 auto-exposure. This will affect both IR and depth image.";
     case RS_OPTION_R200_LR_GAIN                                    : return "IR image gain";
     case RS_OPTION_R200_LR_EXPOSURE                                : return "This control allows manual adjustment of the exposure time value for the L/R imagers";
@@ -608,7 +616,7 @@ const char * rs_device_base::get_option_description(rs_option option) const
     case RS_OPTION_FISHEYE_EXPOSURE                                : return "Fisheye image exposure time in msec";
     case RS_OPTION_FISHEYE_GAIN                                    : return "Fisheye image gain";
     case RS_OPTION_FISHEYE_STROBE                                  : return "Enables / disables fisheye strobe. When enabled this will align timestamps to common clock-domain with the motion events";
-    case RS_OPTION_FISHEYE_EXTERNAL_TRIGGER                        : return "Enables / disables fisheye external trigger mode. When enabled fisheye image will be aquired in-sync with the depth image";
+    case RS_OPTION_FISHEYE_EXTERNAL_TRIGGER                        : return "Enables / disables fisheye external trigger mode. When enabled fisheye image will be acquired in-sync with the depth image";
     case RS_OPTION_FRAMES_QUEUE_SIZE                               : return "Number of frames the user is allowed to keep per stream. Trying to hold-on to more frames will cause frame-drops.";
     case RS_OPTION_FISHEYE_ENABLE_AUTO_EXPOSURE                    : return "Enable / disable fisheye auto-exposure";
     case RS_OPTION_FISHEYE_AUTO_EXPOSURE_MODE                      : return "0 - static auto-exposure, 1 - anti-flicker auto-exposure, 2 - hybrid";

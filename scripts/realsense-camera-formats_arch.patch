@@ -8,20 +8,40 @@ index c26d12f..d86cf22 100644
  		  uvc_status.o uvc_isight.o uvc_debugfs.o
  ifeq ($(CONFIG_MEDIA_CONTROLLER),y)
 diff --git a/drivers/media/usb/uvc/uvc_driver.c b/drivers/media/usb/uvc/uvc_driver.c
-index 47ff9f4..7f62ce6 100644
+index d11fd6a..c819a39 100644
 --- a/drivers/media/usb/uvc/uvc_driver.c
 +++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -168,6 +168,61 @@ static struct uvc_format_desc uvc_fmts[] = {
- 		.guid		= UVC_GUID_FORMAT_RW10,
- 		.fcc		= V4L2_PIX_FMT_SRGGB10P,
+@@ -148,6 +148,81 @@ static struct uvc_format_desc uvc_fmts[] = {
+ 		.guid		= UVC_GUID_FORMAT_H264,
+ 		.fcc		= V4L2_PIX_FMT_H264,
  	},
++	{
++		.name		= "Greyscale 8 L/R (Y8I)",
++		.guid		= UVC_GUID_FORMAT_Y8I,
++		.fcc		= V4L2_PIX_FMT_Y8I,
++	},
++	{
++		.name		= "Greyscale 12 L/R (Y12I)",
++		.guid		= UVC_GUID_FORMAT_Y12I,
++		.fcc		= V4L2_PIX_FMT_Y12I,
++	},
++	{
++		.name		= "Depth data 16-bit (Z16)",
++		.guid		= UVC_GUID_FORMAT_Z16,
++		.fcc		= V4L2_PIX_FMT_Z16,
++	},
++	{
++		.name		= "Bayer 10-bit (SRGGB10P)",
++		.guid		= UVC_GUID_FORMAT_RW10,
++		.fcc		= V4L2_PIX_FMT_SRGGB10P,
++	},
 +	{
 +		.name		= "Raw data 8-bit (RAW8)",
 +		.guid		= UVC_GUID_FORMAT_RAW8,
 +		.fcc		= V4L2_PIX_FMT_RAW8,
 +	},
 +	{
-+		.name		= "Raw data 16-bit (RW16)",
++		.name		= "Raw data 10-bit (RW16)",
 +		.guid		= UVC_GUID_FORMAT_RW16,
 +		.fcc		= V4L2_PIX_FMT_RW16,
 +	},
@@ -74,12 +94,12 @@ index 47ff9f4..7f62ce6 100644
  
  /* ------------------------------------------------------------------------
 diff --git a/drivers/media/usb/uvc/uvcvideo.h b/drivers/media/usb/uvc/uvcvideo.h
-index 7e4d3ee..d031a20 100644
+index f0f2391..6704db7 100644
 --- a/drivers/media/usb/uvc/uvcvideo.h
 +++ b/drivers/media/usb/uvc/uvcvideo.h
-@@ -115,6 +115,51 @@
- #define UVC_GUID_FORMAT_M420 \
- 	{ 'M',  '4',  '2',  '0', 0x00, 0x00, 0x10, 0x00, \
+@@ -119,6 +119,51 @@
+ #define UVC_GUID_FORMAT_H264 \
+ 	{ 'H',  '2',  '6',  '4', 0x00, 0x00, 0x10, 0x00, \
  	 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}
 +#define UVC_GUID_FORMAT_Y8I \
 +	{ 'Y',  '8',  'I',  ' ', 0x00, 0x00, 0x10, 0x00, \
@@ -127,13 +147,13 @@ index 7e4d3ee..d031a20 100644
 +	{ 'P', 0x00,  0x00,  0x00, 0x00, 0x00, 0x10, 0x00, \
 +	 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}
  
- #define UVC_GUID_FORMAT_H264 \
- 	{ 'H',  '2',  '6',  '4', 0x00, 0x00, 0x10, 0x00, \
+ /* ------------------------------------------------------------------------
+  * Driver specific constants.
 diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
-index 421d274..7e00be4 100644
+index a0e87d1..7e00be4 100644
 --- a/include/uapi/linux/videodev2.h
 +++ b/include/uapi/linux/videodev2.h
-@@ -624,6 +624,18 @@ struct v4l2_pix_format {
+@@ -627,6 +627,18 @@ struct v4l2_pix_format {
  #define V4L2_PIX_FMT_Y8I      v4l2_fourcc('Y', '8', 'I', ' ') /* Greyscale 8-bit L/R interleaved */
  #define V4L2_PIX_FMT_Y12I     v4l2_fourcc('Y', '1', '2', 'I') /* Greyscale 12-bit L/R interleaved */
  #define V4L2_PIX_FMT_Z16      v4l2_fourcc('Z', '1', '6', ' ') /* Depth data 16-bit */
