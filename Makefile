@@ -38,6 +38,8 @@ CXXFLAGS += -mssse3
 endif
 endif
 
+CXXFLAGS += -I3rdparty/rapidjson/include
+
 # Compute list of all *.o files that participate in librealsense.so
 OBJECTS = verify
 OBJECTS += $(notdir $(basename $(wildcard src/*.cpp)))

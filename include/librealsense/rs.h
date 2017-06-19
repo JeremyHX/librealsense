@@ -29,12 +29,6 @@ extern "C" {
 /* Return version in "X.Y.Z" format */
 #define RS_API_VERSION_STR (VAR_ARG_STRING(RS_API_MAJOR_VERSION.RS_API_MINOR_VERSION.RS_API_PATCH_VERSION))
 
-typedef enum rs_frame_metadata
-{
-    RS_FRAME_METADATA_ACTUAL_EXPOSURE,
-    RS_FRAME_METADATA_COUNT
-} rs_frame_metadata;
-
 /* rs_capabilities defines the full set of functionality that a RealSense device might provide
    to check what functionality is supported by a particular device at runtime call dev->supports(capability) */
 typedef enum rs_capabilities
@@ -230,23 +224,6 @@ typedef enum rs_frame_metadata
     RS_FRAME_METADATA_ACTUAL_FPS,      /**< Actual FPS at the time of capture */
     RS_FRAME_METADATA_COUNT            /**< Number of enumeration values. Not a valid input: intended to be used in for-loops. */
 } rs_frame_metadata;
-
-/** \brief Specifies various capabilities of a RealSense device.
-
-   To check if a certain capability is supported by a particular device, at runtime call <tt>dev->supports(capability)</tt>. */
-typedef enum rs_capabilities
-{
-    RS_CAPABILITIES_DEPTH,                      /**< Provides depth stream */
-    RS_CAPABILITIES_COLOR,                      /**< Provides color stream */
-    RS_CAPABILITIES_INFRARED,                   /**< Provides infrared stream */
-    RS_CAPABILITIES_INFRARED2,                  /**< Provides second infrared stream */
-    RS_CAPABILITIES_FISH_EYE,                   /**< Provides wide field of view (fish-eye) stream */
-    RS_CAPABILITIES_MOTION_EVENTS,              /**< Provides gyroscope and accelorometer events */
-    RS_CAPABILITIES_MOTION_MODULE_FW_UPDATE,    /**< Provides method for upgrading motion module firmware */
-    RS_CAPABILITIES_ADAPTER_BOARD,              /**< Internally MIPI-to-USB adapter */
-    RS_CAPABILITIES_ENUMERATION,                /**< Provides enough basic functionality to be considered supported. This is to catch at runtime various outdated engineering samples. */
-    RS_CAPABILITIES_COUNT,                      /**< Number of enumeration values. Not a valid input: intended to be used in for-loops. */
-} rs_capabilities;
 
 /** \brief Proprietary formats for direct communication with device firmware */
 typedef enum rs_blob_type {

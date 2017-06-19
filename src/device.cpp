@@ -385,8 +385,8 @@ void rs_device_base::start_video_streaming(bool is_mipi)
         set_subdevice_mode(*device, mode_selection.mode.subdevice, mode_selection.mode.native_dims.x, mode_selection.mode.native_dims.y, mode_selection.mode.pf.fourcc, mode_selection.mode.fps, 
             [this, mode_selection, archive, timestamp_reader, streams, capture_start_time, frame_drops_status, actual_fps_calc, supported_metadata_vector](const void * frame, std::function<void()> continuation) mutable
         {
-            auto now = std::chrono::system_clock::now().time_since_epoch();
-            auto sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+            auto now = std::chrono::system_clock::now();
+            auto sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
             static int drops = 0;
             frame_continuation release_and_enqueue(continuation, frame);
             // Ignore any frames which appear corrupted or invalid
@@ -785,20 +785,23 @@ void rs_device_base::fisheyeCallback(motion::MotionFisheyeFrame* frame) {
         return;
     }
 
+	std::shared_ptr<std::vector<rs_frame_metadata>> supported_metadata_vector = std::make_shared<std::vector<rs_frame_metadata>>(config.info.supported_metadata_vector);
+
         frame_archive::frame_additional_data additional_data( (frame->header.timestamp)/1000000.0,
-            frame->header.seq-3,
-            0,
-            frame->width,
-            frame->height,
-            30,
-            frame->width,
-            0,
-            8,
-            RS_FORMAT_Y8,
-            RS_STREAM_FISHEYE,
-            0,
-            config.info.supported_metadata_vector,
-            frame->exposure);
+	    (unsigned long long)frame->header.seq-3,
+	    (long long)0,
+            (int)frame->width,
+            (int)frame->height,
+            (int)30,
+            (int)frame->width,
+            (int)0,
+            (int)8,
+            (rs_format)RS_FORMAT_Y8,
+            (rs_stream)RS_STREAM_FISHEYE,
+            (int)0,
+	    supported_metadata_vector,
+	    (double)frame->exposure,
+            (double)30.0);
 
         additional_data.timestamp_domain = RS_TIMESTAMP_DOMAIN_MICROCONTROLLER;
         byte* frameData = archive->alloc_frame(RS_STREAM_FISHEYE, additional_data, true); // Sergey: this allocates object for the frame
